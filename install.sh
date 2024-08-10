@@ -1,30 +1,43 @@
 #!/bin/bash
 
-# Update sistem
-sudo apt update && sudo apt upgrade -y
+# Check 64-bit
+if [ "$(uname -m)" != "x86_64" ] || ! grep -q 'Ubuntu' /etc/os-release; then
+    echo "Script ini hanya bisa dijalankan pada Linux Ubuntu 64-bit."
+    exit 1
+fi
 
-# Install dependensi
-sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+# Check root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Script ini harus dijalankan sebagai root."
+    exit 1
+fi
 
-# Tambahkan GPG key Docker
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# Add Docker's official GPG key
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Tambahkan repository Docker ke sumber paket APT
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# Update repository paket
-sudo apt update
+# Add docker repo
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
 
 # Install Docker
-sudo apt install docker-ce docker-ce-cli containerd.io -y
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Tambahkan user ke grup docker (Opsional)
-sudo usermod -aG docker ${USER}
+# Add Docker group
+sudo groupadd docker || true
 
-# Verifikasi instalasi Docker
-docker --version
+# Add Docker user to group
+sudo usermod -aG docker $USER
 
-# Set Docker agar start otomatis saat sistem dinyalakan
-sudo systemctl enable docker
+# Activated group
+newgrp docker
 
-echo "Docker telah berhasil diinstal dan dikonfigurasi di sistem Anda."
+# Enable auto start docker
+sudo systemctl enable docker.service
+sudo systemctl enable containerd.service
+
+# Close message
+echo "Penginstalan Docker sudah selesai."
