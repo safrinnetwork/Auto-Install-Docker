@@ -18,17 +18,11 @@ sudo apt update
 # Install Docker
 sudo apt install docker-ce docker-ce-cli containerd.io -y
 
-# Cek status Docker
-sudo systemctl status docker
-
 # Tambahkan user ke grup docker (Opsional)
 sudo usermod -aG docker ${USER}
 
 # Verifikasi instalasi Docker
 docker --version
-
-# Jalankan container hello-world untuk menguji instalasi Docker
-sudo docker run hello-world
 
 # Set Docker agar start otomatis saat sistem dinyalakan
 sudo systemctl enable docker
